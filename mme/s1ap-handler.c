@@ -2701,6 +2701,52 @@ void s1ap_handle_enb_configuration_transfer(
 //siztel
 
 
+bool is_inter_mme_handover(ogs_s1ap_message_t *message) {
+
+    // Assuming 'message' contains the Handover Required message with necessary information
+
+    // You would typically have some logic to extract the MME identifiers from the message
+
+    // For example, let's assume 'sourceMME_ID' and 'targetMME_ID' are obtained from the message
+
+
+    // The actual implementation would depend on how MME identifiers are represented in the message
+
+    // and how they can be compared. This is just a placeholder for the actual logic.
+
+    uint32_t sourceMME_ID = get_source_mme_identifier(message);
+
+    uint32_t targetMME_ID = get_target_mme_identifier(message);
+
+
+    // Compare the source and target MME identifiers
+
+    if (sourceMME_ID != targetMME_ID) {
+
+        // The MME identifiers are different, indicating an inter-MME handover
+
+        return true;
+
+    } else {
+
+        // The MME identifiers are the same, indicating an intra-MME handover
+
+        return false;
+
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
 ogs_pkbuf_t *create_inter_mme_handover_required_msg(mme_ue_t *mme_ue) {
 
     ogs_pkbuf_t *pkbuf = NULL;
