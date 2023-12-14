@@ -176,26 +176,140 @@ ogs_pkbuf_t *s10_build_context_request(
 
 // Function to build a GTPv2-C Context Response message
 
-ogs_pkbuf_t *s10_build_context_response(/* parameters */) {
+ogs_pkbuf_t *s10_build_context_response(
 
-    // Build and return the Context Response message
+    const char *target_mme_ip, 
 
-    // Use the parameters to populate the message fields as per the protocol
+    const uint32_t target_mme_teid, 
 
-    // Implementation details would be based on the GTPv2-C message structure
+    const bool forward_relocation, 
+
+    const bool relocation_accepted
+
+) {
+
+    // Allocate memory for the message buffer
+
+    ogs_pkbuf_t *pkbuf = ogs_pkbuf_alloc(S10_CONTEXT_RESPONSE_MAX_LEN);
+
+    if (!pkbuf) {
+
+        return NULL; // Failed to allocate pkbuf
+
+    }
+
+
+    // Initialize message headers
+
+    ogs_gtp_header_t *hdr = ogs_pkbuf_push(pkbuf, sizeof(ogs_gtp_header_t));
+
+    hdr->type = GTPC_CONTEXT_RESPONSE;
+
+    hdr->teid = target_mme_teid; // TEID of the target MME
+
+    hdr->length = 0; // Will be set after adding all IEs
+
+    hdr->sequence_number = ogs_gtp_new_sequence(); // Assuming a function to generate sequence numbers
+
+    hdr->message_priority = 0; // Default priority
+
+    hdr->spare = 0; // Spare bits, set to 0
+
+
+    // Add IEs to the message
+
+    if (forward_relocation) {
+
+        if (relocation_accepted) {
+
+            // Add F-TEID IE for the target MME
+
+            ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_F_TEID, sizeof(target_mme_teid), &target_mme_teid);
+
+        } else {
+
+            // Add Redirect Host IE for the target MME
+
+            ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_REDIRECT_HOST, strlen(target_mme_ip), target_mme_ip);
+
+        }
+
+    } else {
+
+        // Add Cause IE to indicate rejection
+
+        uint8_t cause_value = OGS_GTP_CAUSE_REQUEST_REJECTED; // Assuming a defined cause value for rejection
+
+        ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_CAUSE, sizeof(cause_value), &cause_value);
+
+    }
+
+
+    // Update the length in the GTP header
+
+    hdr->length = htons(pkbuf->len - sizeof(ogs_gtp_header_t));
+
+
+    // Finalize the message by setting the header flags and length
+
+    ogs_gtp_finalize_message(pkbuf, hdr->type);
+
+
+    return pkbuf;
 
 }
 
 
 // Function to send a GTPv2-C message over the S10 interface
 
+
 int s10_send(ogs_pkbuf_t *pkbuf) {
 
-    // Send the message using the appropriate transport (e.g., UDP)
+    s10_context_t *s10_ctx = s10_self(); // Retrieve the S10 context
 
-    // Implement the sending logic based on the project's network stack
+    ogs_gtp_node_t *gtpc_node = NULL;
 
-    // Return an appropriate status code based on the success of the operation
+
+    if (s10_ctx == NULL) {
+
+        ogs_error("S10 context is not initialized");
+
+        ogs_pkbuf_free(pkbuf);
+
+        return OGS_ERROR;
+
+    }
+
+
+    gtpc_node = s10_ctx->gtpc_node;
+
+    if (gtpc_node == NULL) {
+
+        ogs_error("S10 GTP-C node is not initialized");
+
+        ogs_pkbuf_free(pkbuf);
+
+        return OGS_ERROR;
+
+    }
+
+
+    // Send the message using the GTP-C node
+
+    int rv = ogs_gtp_send(gtpc_node, pkbuf);
+
+    if (rv != OGS_OK) {
+
+        ogs_error("Failed to send message on S10 interface");
+
+        // ogs_pkbuf_free(pkbuf); // pkbuf is normally freed by ogs_gtp_send
+
+        return OGS_ERROR;
+
+    }
+
+
+    return OGS_OK;
 
 }
 
@@ -204,11 +318,58 @@ int s10_send(ogs_pkbuf_t *pkbuf) {
 
 int s10_receive(ogs_pkbuf_t **pkbuf) {
 
-    // Receive the message and store it in the provided pkbuf pointer
+    s10_context_t *s10_ctx = s10_self(); // Retrieve the S10 context
 
-    // Implement the receiving logic based on the project's network stack
+    ogs_gtp_node_t *gtpc_node = NULL;
 
-    // Return an appropriate status code based on the success of the operation
+    int rv;
+
+
+    if (s10_ctx == NULL) {
+
+        ogs_error("S10 context is not initialized");
+
+        return OGS_ERROR;
+
+    }
+
+
+    gtpc_node = s10_ctx->gtpc_node;
+
+    if (gtpc_node == NULL) {
+
+        ogs_error("S10 GTP-C node is not initialized");
+
+        return OGS_ERROR;
+
+    }
+
+
+    // Receive the message using the GTP-C node
+
+    rv = ogs_gtp_recv(gtpc_node, pkbuf);
+
+    if (rv != OGS_OK) {
+
+        ogs_error("Failed to receive message on S10 interface");
+
+        return OGS_ERROR;
+
+    }
+
+
+    // Check if the received packet buffer is valid
+
+    if (*pkbuf == NULL) {
+
+        ogs_error("Received null pkbuf");
+
+        return OGS_ERROR;
+
+    }
+
+
+    return OGS_OK;
 
 }
 
@@ -217,9 +378,125 @@ int s10_receive(ogs_pkbuf_t **pkbuf) {
 
 void s10_handle_incoming(void) {
 
-    // Handle incoming messages, dispatch to appropriate handlers
+    ogs_pkbuf_t *pkbuf = NULL;
 
-    // Implement the dispatching logic based on the project's requirements
+    ogs_gtp_header_t *hdr = NULL;
+
+    int rv;
+
+
+    // Retrieve the S10 context
+
+    s10_context_t *s10_ctx = s10_self();
+
+    if (s10_ctx == NULL) {
+
+        ogs_error("S10 context is not initialized");
+
+        return;
+
+    }
+
+
+    // Receive the message from the S10 interface
+
+    rv = s10_receive(&pkbuf);
+
+    if (rv != OGS_OK) {
+
+        ogs_error("Failed to receive message on S10 interface");
+
+        return;
+
+    }
+
+
+    // Ensure the packet buffer is not NULL
+
+    if (pkbuf == NULL) {
+
+        ogs_error("Received null pkbuf");
+
+        return;
+
+    }
+
+
+    // Parse the GTP header from the received message
+
+    hdr = ogs_gtp_parse_header(pkbuf, OGS_GTP_V2);
+
+    if (hdr == NULL) {
+
+        ogs_error("Failed to parse GTP header");
+
+        ogs_pkbuf_free(pkbuf);
+
+        return;
+
+    }
+
+
+    // Dispatch the message to the appropriate handler based on the message type
+
+    switch (hdr->type) {
+
+        case GTPC_CONTEXT_REQUEST:
+
+            handle_context_request(pkbuf);
+
+            break;
+
+        case GTPC_CONTEXT_RESPONSE:
+
+            handle_context_response(pkbuf);
+
+            break;
+
+        case GTPC_CONTEXT_ACKNOWLEDGE:
+
+            handle_context_acknowledge(pkbuf);
+
+            break;
+
+        case GTPC_FORWARD_RELOCATION_REQUEST:
+
+            handle_forward_relocation_request(pkbuf);
+
+            break;
+
+        case GTPC_FORWARD_RELOCATION_RESPONSE:
+
+            handle_forward_relocation_response(pkbuf);
+
+            break;
+
+        case GTPC_FORWARD_RELOCATION_COMPLETE_NOTIFICATION:
+
+            handle_forward_relocation_complete_notification(pkbuf);
+
+            break;
+
+        case GTPC_FORWARD_RELOCATION_COMPLETE_ACKNOWLEDGE:
+
+            handle_forward_relocation_complete_acknowledge(pkbuf);
+
+            break;
+
+        // ... additional cases for other message types ...
+
+        default:
+
+            ogs_error("Unknown GTP message type received: %d", hdr->type);
+
+            break;
+
+    }
+
+
+    // Free the packet buffer after handling
+
+    ogs_pkbuf_free(pkbuf);
 
 }
 
