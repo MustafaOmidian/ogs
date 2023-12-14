@@ -95,13 +95,20 @@ int s10_init(void) {
 // Finalization function for the S10 interface
 
 void s10_final(void) {
+    s10_context_t *s10_ctx = s10_self(); // Retrieve the S10 context
 
-    // Clean up resources, close sockets, etc. for the S10 interface
+    if (s10_ctx) {
+        // Close the GTP-C node if it has been initialized
+        if (s10_ctx->gtpc_node) {
+            ogs_gtp_node_free(s10_ctx->gtpc_node);
+            s10_ctx->gtpc_node = NULL;
+        }
 
-    // This may involve tearing down GTP-C nodes, closing ports, and more
+        // Finalize the S10 context itself
+        s10_context_final();
+    }
 
-    // Specific cleanup code based on the project's requirements goes here
-
+    ogs_info("S10 GTP-C interface finalized");
 }
 
 
