@@ -48,7 +48,7 @@ extern int __s10_log_domain;
 
 typedef struct s10_context_s {
 
-    // Definitions for the S10 context structure would go here.
+    ogs_gtp_node_t *gtpc_node; // GTP-C node for S10 interface    // Definitions for the S10 context structure would go here.
 
     // This would typically include hash tables, lists, and other
 

@@ -94,8 +94,7 @@ ogs_pkbuf_t *s10_build_forward_relocation_request(const char *ue_id, const char 
 
     // Finalize the message
     finalize_diameter_message(pkbuf);
-
-S10-interface, [12/11/23 3:44 PM]
+    
 return pkbuf;
 }
 /* Function to build Forward Relocation Response */
