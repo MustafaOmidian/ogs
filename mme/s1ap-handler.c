@@ -2696,6 +2696,86 @@ void s1ap_handle_enb_configuration_transfer(
     }
 }
 
+
+
+//siztel
+
+
+ogs_pkbuf_t *create_inter_mme_handover_required_msg(mme_ue_t *mme_ue) {
+
+    ogs_pkbuf_t *pkbuf = NULL;
+
+    ogs_s1ap_message_t s1ap_message;
+
+    memset(&s1ap_message, 0, sizeof(ogs_s1ap_message_t));
+
+
+    // Set the S1AP Procedure Code for Handover Required
+
+    s1ap_message.h.procedureCode = OGS_S1AP_PROCEDURE_HANDOVER_REQUIRED;
+
+    s1ap_message.h.direction = OGS_S1AP_PDU_PR_initiatingMessage;
+
+
+    // Build the Handover Required message
+
+    // Note: You will need to fill in the appropriate information elements (IEs)
+
+    // for the Handover Required message as per your network's requirements.
+
+    // This may include the MME UE S1AP ID, ENB UE S1AP ID, Handover Type,
+
+    // Cause, Target ID, Direct Forwarding Path Availability, etc.
+
+
+    // For example, setting the MME UE S1AP ID (this is just an example, you need to set actual IEs)
+
+    s1ap_message.initiatingMessage.value.present = OGS_S1AP_INITIATINGMESSAGE_PRESENT_HANDOVERREQUIRED;
+
+    s1ap_message.initiatingMessage.value.choice.HandoverRequired.mme_ue_s1ap_id = mme_ue->mme_ue_s1ap_id;
+
+
+    // Encode the message into pkbuf
+
+    pkbuf = ogs_s1ap_encode(&s1ap_message);
+
+    if (!pkbuf) {
+
+        ogs_error("Failed to encode S1AP Handover Required message");
+
+        return NULL;
+
+    }
+
+
+    return pkbuf;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void s1ap_handle_handover_required_intralte(enb_ue_t *source_ue,
                 S1AP_Cause_t *Cause, S1AP_TargetID_t *TargetID,
                 S1AP_Source_ToTarget_TransparentContainer_t *Source_ToTarget_TransparentContainer)
@@ -2900,7 +2980,7 @@ void s1ap_handle_handover_required(mme_enb_t *enb, ogs_s1ap_message_t *message)
         ogs_assert(r != OGS_ERROR);
         return;
     }
-
+    //siztel
     switch (*HandoverType) {
     case S1AP_HandoverType_intralte:
         s1ap_handle_handover_required_intralte(source_ue, Cause, TargetID, Source_ToTarget_TransparentContainer);
