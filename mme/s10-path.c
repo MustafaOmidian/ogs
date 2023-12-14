@@ -114,13 +114,62 @@ void s10_final(void) {
 
 // Function to build a GTPv2-C Context Request message
 
-ogs_pkbuf_t *s10_build_context_request(/* parameters */) {
+ogs_pkbuf_t *s10_build_context_request(
 
-    // Build and return the Context Request message
+    const char *ue_id, 
 
-    // Use the parameters to populate the message fields as per the protocol
+    const char *serving_mme_ip, 
 
-    // Implementation details would be based on the GTPv2-C message structure
+    const uint32_t mme_teid
+
+) {
+
+    ogs_pkbuf_t *pkbuf = ogs_pkbuf_alloc(S10_CONTEXT_REQUEST_MAX_LEN);
+
+    if (!pkbuf) {
+
+        return NULL; // Failed to allocate pkbuf
+
+    }
+
+
+    // Initialize message headers for GTPv2-C Context Request
+
+    ogs_gtp_header_t *hdr = ogs_pkbuf_push(pkbuf, sizeof(ogs_gtp_header_t));
+
+    hdr->type = GTPC_CONTEXT_REQUEST;
+
+    hdr->teid = 0; // TEID is not used in the initial request
+
+    hdr->length = 0; // Will be set after adding all IEs
+
+    hdr->sequence_number = ogs_gtp_new_sequence(); // Assuming a function to generate sequence numbers
+
+    hdr->message_priority = 0; // Default priority
+
+    hdr->spare = 0; // Spare bits, set to 0
+
+
+    // Add IEs to the message
+
+    ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_IMSI, strlen(ue_id), ue_id);
+
+    ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_FQDN, strlen(serving_mme_ip), serving_mme_ip);
+
+    ogs_gtp_add_ie(pkbuf, OGS_GTP_IE_TEID_DATA_I, sizeof(mme_teid), &mme_teid);
+
+
+    // Update the length in the GTP header
+
+    hdr->length = htons(pkbuf->len - sizeof(ogs_gtp_header_t));
+
+
+    // Finalize the message by setting the header flags and length
+
+    ogs_gtp_finalize_message(pkbuf, hdr->type);
+
+
+    return pkbuf;
 
 }
 
