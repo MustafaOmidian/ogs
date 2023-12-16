@@ -75,6 +75,13 @@ int mme_initialize(void)
     rv = s1ap_open();
     if (rv != OGS_OK) return OGS_ERROR;
 
+if (s10_init() != OGS_OK) {
+
+    return OGS_ERROR;
+
+}
+
+
     thread = ogs_thread_create(mme_main, NULL);
     if (!thread) return OGS_ERROR;
 
@@ -96,7 +103,7 @@ void mme_terminate(void)
     s1ap_close();
 
     ogs_metrics_context_close(ogs_metrics_self());
-
+    s10_final();
     mme_fd_final();
 
     mme_context_final();
