@@ -595,6 +595,20 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
                 xact, mme_ue,
                 &gtp_message.bearer_resource_failure_indication);
             break;
+//siztel
+
+        case OGS_GTP2_FORWARD_RELOCATION_REQUEST_TYPE:
+
+            if (!gtp_message.h.teid_presence) ogs_error("No TEID");
+
+            handle_forward_relocation_request(
+
+                xact, mme_ue, &gtp_message.forward_relocation_request);
+
+            break;
+
+
+
         default:
             ogs_warn("Not implemented(type:%d)", gtp_message.h.type);
             break;

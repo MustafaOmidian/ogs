@@ -772,7 +772,7 @@ typedef struct mme_bearer_s {
     uint8_t         *ebi_node;      /* Pool-Node for EPS Bearer ID */
     uint8_t         ebi;            /* EPS Bearer ID */
 
-    uint32_t        enb_s1u_teid;
+    uint32_t        enb_s1u_;
     ogs_ip_t        enb_s1u_ip;
     uint32_t        sgw_s1u_teid;
     ogs_ip_t        sgw_s1u_ip;

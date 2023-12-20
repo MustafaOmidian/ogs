@@ -2705,6 +2705,99 @@ void s1ap_handle_enb_configuration_transfer(
 
 
 
+void handle_inter_mme_handover_required(ogs_pkbuf_t *handover_required_msg) {
+
+    ogs_assert(handover_required_msg);
+
+
+    // Extract the necessary information from the Handover Required message
+
+    // This would include the UE's IMSI, current MME IP, TEIDs, etc.
+
+    // You would need to parse the handover_required_msg to get these values.
+
+    const char *imsi = get_diameter_ie_value(handover_required_msg, IMSI);
+
+    const char *source_mme_ip = get_diameter_ie_value(handover_required_msg, SERVING_MME_IP);
+
+    const uint32_t source_mme_teid = get_diameter_ie_value_uint32(handover_required_msg, MMETEID);
+
+    const char *target_mme_ip = ...; // Placeholder for actual target MME IP extraction
+
+    const uint32_t target_mme_teid = ...; // Placeholder for actual target MME TEID extraction
+
+
+    // Check if the UE is registered with the source MME
+
+    if (!is_ue_registered(imsi)) {
+
+        // UE not registered, send an error response to the source MME
+
+        ogs_pkbuf_t *error_response = s10_build_error_response(S10_FWL_REQ_FAILED, "UE Not Registered");
+
+        send_s10_message(error_response);
+
+    } else {
+
+        // UE is registered, proceed with forwarding the location
+
+
+        // Build the Forward Relocation Request message for the target MME
+
+        ogs_pkbuf_t *fwd_reloc_req = s10_build_forward_relocation_request(
+
+            imsi, source_mme_ip, source_mme_teid, target_mme_ip, target_mme_teid
+
+        );
+
+
+        if (fwd_reloc_req == NULL) {
+
+            ogs_error("Failed to build Forward Relocation Request");
+
+            return;
+
+        }
+
+
+        // Send the Forward Relocation Request message to the target MME
+
+        int rv = s10_send(fwd_reloc_req);
+
+        if (rv != OGS_OK) {
+
+            ogs_error("Failed to send Forward Relocation Request");
+
+            ogs_pkbuf_free(fwd_reloc_req);
+
+            return;
+
+        }
+
+
+        // Continue with the rest of the handover procedure as necessary
+
+        // This might involve waiting for a response, updating local state, etc.
+
+    }
+
+
+    // Free the Handover Required message buffer
+
+    ogs_pkbuf_free(handover_required_msg);
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2920,7 +3013,7 @@ void s1ap_handle_handover_required(mme_enb_t *enb, ogs_s1ap_message_t *message)
         s1ap_handle_handover_required_intralte(source_ue, Cause, TargetID, Source_ToTarget_TransparentContainer);
         break;
     case S1AP_HandoverType_interlte:
-        s1ap_handle_handover_required_interlte(source_ue, Cause, TargetID, Source_ToTarget_TransparentContainer);
+        handle_inter_mme_handover_required(source_ue, Cause, TargetID, Source_ToTarget_TransparentContainer);
     case S1AP_HandoverType_ltetoutran:
     case S1AP_HandoverType_ltetogeran:
     case S1AP_HandoverType_utrantolte:

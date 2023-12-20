@@ -145,37 +145,6 @@ void handle_forward_relocation_request(void) {
     ogs_pkbuf_free(req);
 }
 
-
-// Extract the UE's IMSI, serving MME IP address, target MME IP address, and TEID from the message
-  const char *imsi = get_diameter_ie_value(req, IMSI);
-  const char *serving_mme_ip = get_diameter_ie_value(req, SERVING_MME_IP);
-  const char *target_mme_ip = get_diameter_ie_value(req, TARGET_MME_IP);
-  const uint32_t target_mme_teid = get_diameter_ie_value_uint32(req, MMETEID);
-
-  // Check if the UE is registered with the serving MME
-  if (!is_ue_registered(imsi)) {
-    // UE not registered, send an error response to the MME
-    ogs_pkbuf_t *error_response = s10_build_error_response(S10_FWL_REQ_FAILED, "UE Not Registered");
-    send_s10_message(error_response);
-  } else {
-    // UE is registered, proceed with forwarding the location
-
-    // Update the MME database with the new target MME IP address and TEID
-    update_ue_serving_mme(target_mme_ip, target_mme_teid);
-
-    // Send a forward relocation response to the MME
-    ogs_pkbuf_t *ack = s10_build_forward_relocation_response(target_mme_ip, true);
-    send_s10_message(ack);
-
-    // Notify the target MME of the new serving MME
-    ogs_pkbuf_t *notify = s10_build_context_acknowledge(target_mme_ip);
-    send_s10_message(notify);
-  }
-
-  // Free the request buffer
-  ogs_pkbuf_free(req);
-}
-
 /* Handler for Forward Relocation Response */
 void handle_forward_relocation_response(void) {
   // Receive the S10 Forward Relocation Response message from the MME
