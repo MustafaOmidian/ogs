@@ -500,10 +500,75 @@ void s10_handle_incoming(void) {
 
 }
 
+int s10_send_handover_request(
 
-// Additional utility functions as needed for the S10 interface
+        mme_ue_t *mme_ue,
 
-// ...
+        S1AP_HandoverType_t *handovertype,
+
+        S1AP_Cause_t *cause,
+
+        S1AP_Source_ToTarget_TransparentContainer_t *source_totarget_transparentContainer);
 
 
-// Note: The actual implementation details would need to be filled in based on the specific logic and requirements of the Open5GS project.
+// s10-path.c
+
+// Define the new function
+
+int s10_send_handover_request(
+
+        mme_ue_t *mme_ue,
+
+        S1AP_HandoverType_t *handovertype,
+
+        S1AP_Cause_t *cause,
+
+        S1AP_Source_ToTarget_TransparentContainer_t *source_totarget_transparentContainer) {
+
+
+    ogs_pkbuf_t *pkbuf = NULL;
+
+    int rv;
+
+
+    ogs_assert(mme_ue);
+
+
+    // Build the S10 Handover Request message
+
+    pkbuf = s10_build_handover_request(
+
+                mme_ue->imsi, // Assuming IMSI is used as UE identifier
+
+                mme_ue->serving_mme_ip, // Serving MME IP address
+
+                mme_ue->mme_teid); // MME TEID for control signaling
+
+
+    if (!pkbuf) {
+
+        ogs_error("s10_build_handover_request() failed");
+
+        return OGS_ERROR;
+
+    }
+
+
+    // Send the message using the S10 interface
+
+    rv = s10_send(pkbuf);
+
+    if (rv != OGS_OK) {
+
+        ogs_error("s10_send() failed");
+
+        ogs_pkbuf_free(pkbuf);
+
+        return rv;
+
+    }
+
+
+    return OGS_OK;
+
+}

@@ -55,12 +55,22 @@ void handle_context_response(void) {
   // Check if the UE is relocated
   const char *fteid = get_diameter_ie_value(resp, FTEID);
   if (fteid) {
+
     // UE is relocated, update the serving MME IP and TEID
-    update_ue_serving_mme(fteid);
+
+    const char *serving_mme_ip = get_diameter_ie_value(resp, SERVING_MME_IP);
+
+    const uint32_t serving_mme_teid = get_diameter_ie_value_uint32(resp, MMETEID);
+
+    update_ue_serving_mme(serving_mme_ip, serving_mme_teid);
+
 
     // Notify the MME of the UE relocation
+
     ogs_pkbuf_t *notify = s10_build_forward_relocation_complete_notification(get_diameter_ie_value(resp, TARGET_MME_IP));
+
     send_s10_message(notify);
+
   } else {
     // UE is not relocated, acknowledge the MME
     ogs_pkbuf_t *ack = s10_build_forward_relocation_complete_acknowledge(get_diameter_ie_value(resp, SERVING_MME_IP));
@@ -184,7 +194,15 @@ void handle_forward_relocation_response(void) {
 }
 
 /* Handler for Forward Relocation Complete Notification */
-void handle_forward_relocation_complete_notification(void) {
+void handle_forward_relocation_complete_notification(
+
+    mme_ue_s1ap_id_t mme_ue_s1ap_id,
+
+    const char *serving_mme_ip,
+
+    uint32_t mme_teid)
+
+{
   // Receive the S10 Forward Relocation Complete Notification message from the MME
   ogs_pkbuf_t *notify = ogs_pkbuf_alloc(S10_FORWARD_RELOCATION_COMPLETE_NOTIFICATION_MAX_LEN);
   if (!notify) {
@@ -201,8 +219,7 @@ void handle_forward_relocation_complete_notification(void) {
   const char *target_mme_ip = get_diameter_ie_value(notify, TARGET_MME_IP);
 
   // Update the serving MME IP address in the UE database to the target MME's IP address
-  update_ue_serving_mme(target_mme_ip);
-
+    update_ue_serving_mme(serving_mme_ip, mme_teid);
   // Send a context acknowledge to the MME to indicate the successful deletion of the UE from the serving MME's database
   ogs_pkbuf_t *ack = ogs_pkbuf_alloc(S10_CONTEXT_ACKNOWLEDGE_MAX_LEN);
   if (!ack) {
@@ -222,7 +239,11 @@ void handle_forward_relocation_complete_notification(void) {
 }
 
 /* Handler for Forward Relocation Complete Acknowledge */
-void handle_forward_relocation_complete_acknowledge(void) {
+void handle_forward_relocation_complete_acknowledge(
+
+    ogs_s10_t *s10, ogs_gtpv2c_cause_t *cause, ogs_gtpv2c_teid_t *teid)
+
+{
   // Receive the S10 Forward Relocation Complete Acknowledge from the MME
   ogs_pkbuf_t *ack = ogs_pkbuf_alloc(S10_FORWARD_RELOCATION_COMPLETE_ACKNOWLEDGE_MAX_LEN);
   if (!ack) {
@@ -240,8 +261,7 @@ void handle_forward_relocation_complete_acknowledge(void) {
   const char *serving_mme_ip = get_diameter_ie_value(ack, SERVING_MME_IP);
 
   // Update the UE serving MME IP in the UE database to the serving MME's IP address
-  update_ue_serving_mme(serving_mme_ip);
-
+  update_ue_serving_mme(serving_mme_ip, teid);
   // Free the acknowledgment buffer
   ogs_pkbuf_free(ack);
 }
