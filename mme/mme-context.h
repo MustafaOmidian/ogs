@@ -869,7 +869,8 @@ mme_enb_t *mme_enb_find_by_enb_id(uint32_t enb_id);
 int mme_enb_set_enb_id(mme_enb_t *enb, uint32_t enb_id);
 int mme_enb_sock_type(ogs_sock_t *sock);
 mme_enb_t *mme_enb_cycle(mme_enb_t *enb);
-
+//siztel
+void update_ue_serving_mme(mme_ue_t *mme_ue, mme_sgw_t *new_sgw);
 enb_ue_t *enb_ue_add(mme_enb_t *enb, uint32_t enb_ue_s1ap_id);
 void enb_ue_remove(enb_ue_t *enb_ue);
 void enb_ue_switch_to_enb(enb_ue_t *enb_ue, mme_enb_t *new_enb);

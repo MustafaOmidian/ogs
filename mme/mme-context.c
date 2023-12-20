@@ -4454,3 +4454,47 @@ static void stats_remove_mme_session(void)
     num_of_mme_sess = num_of_mme_sess - 1;
     ogs_info("[Removed] Number of MME-Sessions is now %d", num_of_mme_sess);
 }
+//siztel
+void update_ue_serving_mme(mme_ue_t *mme_ue, mme_sgw_t *new_sgw) {
+
+    ogs_assert(mme_ue);
+
+    ogs_assert(new_sgw);
+
+
+    // Acquire a write lock for the UE context if needed
+
+    // LOCK_UE_CONTEXT();
+
+
+    // Update the serving SGW in the UE's context
+
+    if (mme_ue->sgw_ue) {
+
+        // If there is an existing SGW context, release or update it
+
+        sgw_ue_remove(mme_ue->sgw_ue);
+
+    }
+
+
+    // Associate the new SGW with the UE
+
+    mme_ue->sgw_ue = sgw_ue_add(new_sgw);
+
+
+    // Update any other relevant information in the UE's context
+
+    // ...
+
+
+    // Release the write lock if acquired
+
+    // UNLOCK_UE_CONTEXT();
+
+
+    // Log the update or notify other components if necessary
+
+    ogs_info("UE Serving MME has been updated: MME_UE_S1AP_ID[%d]", mme_ue->mme_ue_s1ap_id);
+
+}

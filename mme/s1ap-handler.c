@@ -2705,7 +2705,9 @@ void s1ap_handle_enb_configuration_transfer(
 
 
 
-void handle_inter_mme_handover_required(ogs_pkbuf_t *handover_required_msg) {
+void 
+
+(ogs_pkbuf_t *handover_required_msg) {
 
     ogs_assert(handover_required_msg);
 
